@@ -1,0 +1,30 @@
+{
+  "name": "novasoil",
+  "version": "1.0.0",
+  "description": "Proyecto de gestión de suelos y medicion de la huella de carbono",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.21.2",
+    "mongoose": "^7.6.10",
+    "proj4": "^2.19.10",
+    "shapefile": "^0.6.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "simple-update-notifier": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=14.x"
+  },
+  "license": "MIT",
+  "keywords": [],
+  "author": ""
+}
