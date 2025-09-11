@@ -1,24 +1,169 @@
-import { processCSVData, processShapefile, getAllSamples } from '../services/geoDataService.js';
+import shapefileService from '../services/shapefileService.js';
+import samplingDataService from '../services/samplingDataService.js';
 import logger from '../utils/logger.js';
 
-export const importData = async (req, res, next) => {
-    try {
-        // Procesar los datos
-        logger.info('Starting data import process');
-
-        const csvResults = await processCSVData();
-        const shapefileResults = await processShapefile();
-
-        res.status(200).json({
-            status: 'success',
-            message: 'Data imported successfully',
-            csvCount: csvResults.length,
-            shapefileCount: shapefileResults.length
-        });
-    } catch (error) {
-        next(error);
+export class GeoDataController {
+    /**
+     * Obtiene el shapefile procesado en formato GeoJSON
+     */
+    async getShapefile(req, res) {
+        try {
+            logger.info('Procesando shapefile...');
+            const geojson = await shapefileService.processShapefile();
+            
+            res.json({
+                success: true,
+                data: geojson,
+                message: 'Shapefile procesado correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo shapefile:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando shapefile',
+                error: error.message
+            });
+        }
     }
-};
+
+    /**
+     * Obtiene información básica del shapefile
+     */
+    async getShapefileInfo(req, res) {
+        try {
+            const info = await shapefileService.getShapefileInfo();
+            
+            res.json({
+                success: true,
+                data: info,
+                message: 'Información del shapefile obtenida correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo información del shapefile:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error obteniendo información del shapefile',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtiene los datos de muestreo en formato GeoJSON
+     */
+    async getSamplingData(req, res) {
+        try {
+            logger.info('Procesando datos de muestreo...');
+            const geojson = await samplingDataService.getSamplingGeoJSON();
+            
+            res.json({
+                success: true,
+                data: geojson,
+                message: 'Datos de muestreo procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtiene estadísticas de los datos de muestreo
+     */
+    async getSamplingStats(req, res) {
+        try {
+            const stats = await samplingDataService.getSamplingStats();
+            
+            res.json({
+                success: true,
+                data: stats,
+                message: 'Estadísticas de muestreo obtenidas correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo estadísticas de muestreo:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error obteniendo estadísticas de muestreo',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtiene una muestra específica por código
+     */
+    async getSampleByCode(req, res) {
+        try {
+            const { code } = req.params;
+            
+            if (!code) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Código de muestra requerido'
+                });
+            }
+
+            const sample = await samplingDataService.getSampleByCode(code);
+            
+            if (!sample) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Muestra no encontrada'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: sample,
+                message: 'Muestra encontrada correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo muestra por código:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error obteniendo muestra',
+                error: error.message
+            });
+        }
+    }
+
+    /**
+     * Obtiene todos los datos geoespaciales (shapefile + muestras)
+     */
+    async getAllGeoData(req, res) {
+        try {
+            logger.info('Obteniendo todos los datos geoespaciales...');
+            
+            const [shapefile, samplingData] = await Promise.all([
+                shapefileService.processShapefile(),
+                samplingDataService.getSamplingGeoJSON()
+            ]);
+
+            res.json({
+                success: true,
+                data: {
+                    shapefile: shapefile,
+                    samplingData: samplingData
+                },
+                message: 'Datos geoespaciales obtenidos correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos geoespaciales:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error obteniendo datos geoespaciales',
+                error: error.message
+            });
+        }
+    }
+}
+
+const geoDataController = new GeoDataController();
+export default geoDataController;
 
 export const getSamples = async (req, res, next) => {
     try {
