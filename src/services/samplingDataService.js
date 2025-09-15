@@ -9,31 +9,38 @@ const __dirname = path.dirname(__filename);
 class SamplingDataService {
     constructor() {
         this.csvPath = path.join(__dirname, '../../Formatos de coordenadas/Sampling Tamarguillo Park.csv');
+        this.csvPathGermany = path.join(__dirname, '../../Formatos de coordenadas/Alemania.csv');
     }
 
     /**
      * Procesa el archivo CSV de datos de muestreo
      */
-    async processSamplingData() {
+    async processSamplingData(csvType = 'tamarguillo') {
         try {
-            if (!fs.existsSync(this.csvPath)) {
+            const csvPath = csvType === 'germany' ? this.csvPathGermany : this.csvPath;
+            if (!fs.existsSync(csvPath)) {
                 throw new Error('Archivo CSV de muestreo no encontrado');
             }
 
             const samples = [];
-            
+            let separator = ';';
+            let headers = undefined;
+            if (csvType === 'germany') {
+                separator = ',';
+                headers = undefined; // Usar los del archivo
+            }
             return new Promise((resolve, reject) => {
-                fs.createReadStream(this.csvPath)
-                    .pipe(csv({ separator: ';' }))
+                fs.createReadStream(csvPath)
+                    .pipe(csv({ separator, headers }))
                     .on('data', (row) => {
                         // Procesar cada fila del CSV
-                        const sample = this.processSampleRow(row);
+                        const sample = csvType === 'germany' ? this.processSampleRowGermany(row) : this.processSampleRow(row);
                         if (sample) {
                             samples.push(sample);
                         }
                     })
                     .on('end', () => {
-                        console.log(`Procesadas ${samples.length} muestras de suelo`);
+                        console.log(`Procesadas ${samples.length} muestras de suelo (${csvType})`);
                         resolve(samples);
                     })
                     .on('error', (error) => {
@@ -44,6 +51,40 @@ class SamplingDataService {
         } catch (error) {
             console.error('Error procesando datos de muestreo:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Procesa una fila individual del CSV de Alemania
+     */
+    processSampleRowGermany(row) {
+        try {
+            // Copiar todas las columnas del CSV
+            const sample = {};
+            for (const key in row) {
+                sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+
+            // Mejorar lógica de coordenadas
+            const coordRaw = sample['Coord (Lat & Long)'] || sample['Coord'] || '';
+            let coordX = '';
+            let coordY = '';
+            if (coordRaw.includes(';')) {
+                // Ejemplo: "48° 17' 59.40" N;  9° 4' 55.37" O"
+                const [lat, lon] = coordRaw.split(';');
+                coordY = lat.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
+                coordX = lon.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
+            } else if (coordRaw) {
+                // Si solo hay una coordenada, poner en Y
+                coordY = coordRaw.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
+            }
+            sample['coordX'] = coordX;
+            sample['coordY'] = coordY;
+
+            return sample;
+        } catch (error) {
+            console.error('Error procesando fila del CSV de Alemania:', error, row);
+            return null;
         }
     }
 
