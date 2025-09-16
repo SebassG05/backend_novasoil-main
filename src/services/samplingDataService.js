@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
+
     /**
      * Procesa una fila individual del CSV de Bulgaria
      */
@@ -56,6 +57,27 @@ class SamplingDataService {
     }
 
     /**
+     * Procesa una fila individual del CSV de Estonia
+     */
+
+        processSampleRowEstonia(row) {
+        try {
+            // Copiar todas las columnas del CSV
+            const sample = {};
+            for (const key in row) {
+                sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+            // Coordenadas
+            sample['lat'] = parseFloat(sample['Coord (Lat)']?.replace(',', '.'));
+            sample['lon'] = parseFloat(sample['Coord (Long)']?.replace(',', '.'));
+            return sample;
+        } catch (error) {
+            console.error('Error procesando fila del CSV de Estonia:', error, row);
+            return null;
+        }
+    }
+
+    /**
      * Procesa el archivo CSV de datos de muestreo
      */
     async processSamplingData(csvType = 'tamarguillo') {
@@ -71,6 +93,11 @@ class SamplingDataService {
                 separator = ',';
                 headers = undefined;
                 rowProcessor = this.processSampleRowBulgaria.bind(this);
+            } else if (csvType === 'estonia') {
+                csvPath = path.join(__dirname, '../../Formatos de coordenadas/Estonia.csv');
+                separator = ',';
+                headers = undefined;
+                rowProcessor = this.processSampleRowEstonia.bind(this);
             } else {
                 csvPath = this.csvPath;
             }
