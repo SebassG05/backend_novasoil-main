@@ -7,6 +7,48 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
+    /**
+     * Procesa una fila individual del CSV de Bulgaria
+     */
+    processSampleRowBulgaria(row) {
+        try {
+            // Copiar todas las columnas del CSV
+            const sample = {};
+            for (const key in row) {
+                sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+            // Extraer coordenadas del campo 'Coords'
+            const coordRaw = sample['Coords'] || sample['coords'] || '';
+            let lat = null, lon = null;
+            if (coordRaw) {
+                // Formato esperado: 42°18'23.001''N 25°00'21.681''E
+                const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
+                const match = coordRaw.match(dmsRegex);
+                if (match) {
+                    // Latitud
+                    let degLat = parseInt(match[1]);
+                    let minLat = parseInt(match[2]);
+                    let secLat = parseFloat(match[3]);
+                    let dirLat = match[4].toUpperCase();
+                    lat = degLat + minLat / 60 + secLat / 3600;
+                    if (dirLat === 'S') lat *= -1;
+                    // Longitud
+                    let degLon = parseInt(match[5]);
+                    let minLon = parseInt(match[6]);
+                    let secLon = parseFloat(match[7]);
+                    let dirLon = match[8].toUpperCase();
+                    lon = degLon + minLon / 60 + secLon / 3600;
+                    if (dirLon === 'W') lon *= -1;
+                }
+            }
+            sample['lat'] = lat;
+            sample['lon'] = lon;
+            return sample;
+        } catch (error) {
+            console.error('Error procesando fila del CSV de Bulgaria:', error, row);
+            return null;
+        }
+    }
     constructor() {
     this.csvPath = path.join(__dirname, '../../Formatos de coordenadas/Sampling Tamarguillo Park.csv');
     this.csvPathGermany = path.join(__dirname, '../../Formatos de coordenadas/Alemania.csv');
@@ -28,7 +70,7 @@ class SamplingDataService {
                 csvPath = this.csvPathBulgaria;
                 separator = ',';
                 headers = undefined;
-                rowProcessor = this.processSampleRowBulgaria ? this.processSampleRowBulgaria.bind(this) : this.processSampleRowGermany.bind(this);
+                rowProcessor = this.processSampleRowBulgaria.bind(this);
             } else {
                 csvPath = this.csvPath;
             }
