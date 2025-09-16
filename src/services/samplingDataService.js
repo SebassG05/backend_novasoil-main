@@ -8,8 +8,9 @@ const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
     constructor() {
-        this.csvPath = path.join(__dirname, '../../Formatos de coordenadas/Sampling Tamarguillo Park.csv');
-        this.csvPathGermany = path.join(__dirname, '../../Formatos de coordenadas/Alemania.csv');
+    this.csvPath = path.join(__dirname, '../../Formatos de coordenadas/Sampling Tamarguillo Park.csv');
+    this.csvPathGermany = path.join(__dirname, '../../Formatos de coordenadas/Alemania.csv');
+    this.csvPathBulgaria = path.join(__dirname, '../../Formatos de coordenadas/Bulgaria.csv');
     }
 
     /**
@@ -17,24 +18,29 @@ class SamplingDataService {
      */
     async processSamplingData(csvType = 'tamarguillo') {
         try {
-            const csvPath = csvType === 'germany' ? this.csvPathGermany : this.csvPath;
+            let csvPath, separator = ';', headers = undefined, rowProcessor = this.processSampleRow.bind(this);
+            if (csvType === 'germany') {
+                csvPath = this.csvPathGermany;
+                separator = ',';
+                headers = undefined;
+                rowProcessor = this.processSampleRowGermany.bind(this);
+            } else if (csvType === 'bulgaria') {
+                csvPath = this.csvPathBulgaria;
+                separator = ',';
+                headers = undefined;
+                rowProcessor = this.processSampleRowBulgaria ? this.processSampleRowBulgaria.bind(this) : this.processSampleRowGermany.bind(this);
+            } else {
+                csvPath = this.csvPath;
+            }
             if (!fs.existsSync(csvPath)) {
                 throw new Error('Archivo CSV de muestreo no encontrado');
             }
-
             const samples = [];
-            let separator = ';';
-            let headers = undefined;
-            if (csvType === 'germany') {
-                separator = ',';
-                headers = undefined; // Usar los del archivo
-            }
             return new Promise((resolve, reject) => {
                 fs.createReadStream(csvPath)
                     .pipe(csv({ separator, headers }))
                     .on('data', (row) => {
-                        // Procesar cada fila del CSV
-                        const sample = csvType === 'germany' ? this.processSampleRowGermany(row) : this.processSampleRow(row);
+                        const sample = rowProcessor(row);
                         if (sample) {
                             samples.push(sample);
                         }

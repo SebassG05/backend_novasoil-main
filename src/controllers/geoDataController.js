@@ -1,3 +1,4 @@
+
 import shapefileService from '../services/shapefileService.js';
 import samplingDataService from '../services/samplingDataService.js';
 import logger from '../utils/logger.js';
@@ -29,6 +30,34 @@ export class GeoDataController {
             res.status(500).json({
                 success: false,
                 message: 'Error procesando datos de muestreo de Alemania',
+                error: error.message
+            });
+        }
+    }
+
+    async getSamplingDataBulgaria(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('bulgaria');
+            // Limpiar claves y normalizar formato para frontend
+            samples = samples.map(row => {
+                const cleanRow = {};
+                Object.keys(row).forEach(k => {
+                    // Eliminar espacios y caracteres raros de las claves
+                    const cleanKey = k.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                    cleanRow[cleanKey] = row[k];
+                });
+                return cleanRow;
+            });
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Bulgaria procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Bulgaria:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Bulgaria',
                 error: error.message
             });
         }
