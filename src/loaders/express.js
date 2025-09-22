@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import logger from '../utils/logger.js';
 import geoDataRoutes from '../routes/geoDataRoutes.js';
+import holandaGeojsonRoutes from '../routes/holandaGeojsonRoutes.js';
 
 export default function configureExpress(app) {
     // Log de todas las rutas disponibles (para diagnóstico)
@@ -25,6 +26,10 @@ export default function configureExpress(app) {
     // Configurar rutas para datos geográficos - ASEGURARSE de que esto se registra
     logger.info('Registrando rutas de GeoData en /api/geo');
     app.use('/api/geo', geoDataRoutes);
+
+    // Registrar ruta para servir el zip de Holanda
+    logger.info('Registrando ruta de Holanda GeoJSON en /api/holanda');
+    app.use('/api/holanda', holandaGeojsonRoutes);
     
     // Ruta raíz
     app.get('/', (req, res) => {
