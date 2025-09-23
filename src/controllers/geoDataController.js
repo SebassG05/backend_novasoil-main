@@ -37,16 +37,7 @@ export class GeoDataController {
     async getSamplingDataMadrid(req, res) {
         try {
             let samples = await samplingDataService.processSamplingData('madrid');
-            // Limpiar claves y normalizar formato para frontend
-            samples = samples.map(row => {
-                const cleanRow = {};
-                Object.keys(row).forEach(k => {
-                    // Eliminar espacios y caracteres raros de las claves
-                    const cleanKey = k.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-                    cleanRow[cleanKey] = row[k];
-                });
-                return cleanRow;
-            });
+            // Para Madrid, devolver las claves tal cual vienen del CSV (mayúsculas incluidas)
             res.json({
                 success: true,
                 data: samples,

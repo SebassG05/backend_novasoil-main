@@ -64,24 +64,60 @@ class SamplingDataService {
 
     processSampleRowMadrid(row) {
         try {
-            // Normalizar claves a snake_case y limpiar valores
+            // Mantener claves originales y limpiar valores
             const sample = {};
             for (const key in row) {
-                const cleanKey = key.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-                sample[cleanKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+                sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            // Extraer lat/lon del campo 'coord_lat__long' (normalizado)
+            // Extraer lat/lon de los campos 'Latitude' y 'Longitude' si existen
             let lat = null, lon = null;
-            const coordRaw = sample['coord_lat_long'] || sample['coord_lat__long'] || '';
-            if (coordRaw && coordRaw.includes(',')) {
-                // Ejemplo: "56.738763, 23.220368"
-                const [latStr, lonStr] = coordRaw.split(',').map(s => s.trim());
-                lat = parseFloat(latStr.replace(',', '.'));
-                lon = parseFloat(lonStr.replace(',', '.'));
+            // 1. Intentar con Latitude/Longitude
+            if (sample['Latitude'] && sample['Longitude']) {
+                const latStr = String(sample['Latitude']).replace(',', '.').replace(/\s+/g, '');
+                const lonStr = String(sample['Longitude']).replace(',', '.').replace(/\s+/g, '');
+                lat = parseFloat(latStr);
+                lon = parseFloat(lonStr);
             }
-            sample['lat'] = lat;
-            sample['lon'] = lon;
-            return sample;
+            // 2. Intentar con minúsculas
+            if ((lat === null || isNaN(lat)) && sample['latitude'] && sample['longitude']) {
+                const latStr = String(sample['latitude']).replace(',', '.').replace(/\s+/g, '');
+                const lonStr = String(sample['longitude']).replace(',', '.').replace(/\s+/g, '');
+                lat = parseFloat(latStr);
+                lon = parseFloat(lonStr);
+            }
+            // 3. Intentar con columnas _124/_125
+            if ((lat === null || isNaN(lat)) && sample['_124'] && sample['_125']) {
+                const latStr = String(sample['_124']).replace(',', '.').replace(/\s+/g, '');
+                const lonStr = String(sample['_125']).replace(',', '.').replace(/\s+/g, '');
+                lat = parseFloat(latStr);
+                lon = parseFloat(lonStr);
+            }
+            // 4. Intentar con columnas _125/_126
+            if ((lat === null || isNaN(lat)) && sample['_125'] && sample['_126']) {
+                const latStr = String(sample['_125']).replace(',', '.').replace(/\s+/g, '');
+                const lonStr = String(sample['_126']).replace(',', '.').replace(/\s+/g, '');
+                lat = parseFloat(latStr);
+                lon = parseFloat(lonStr);
+            }
+            // 5. Intentar con columnas _124/_126 (por si acaso)
+            if ((lat === null || isNaN(lat)) && sample['_124'] && sample['_126']) {
+                const latStr = String(sample['_124']).replace(',', '.').replace(/\s+/g, '');
+                const lonStr = String(sample['_126']).replace(',', '.').replace(/\s+/g, '');
+                lat = parseFloat(latStr);
+                lon = parseFloat(lonStr);
+            }
+            // Solo devolver si ambos son números válidos
+            if (typeof lat === 'number' && !isNaN(lat) && typeof lon === 'number' && !isNaN(lon)) {
+                sample['lat'] = lat;
+                sample['lon'] = lon;
+                // También rellenar los campos Latitude/Longitude para la tabla
+                sample['Latitude'] = lat;
+                sample['Longitude'] = lon;
+                return sample;
+            } else {
+                console.warn('[Madrid] Fila descartada por coordenadas inválidas:', row);
+                return null;
+            }
         } catch (error) {
             console.error('Error procesando fila del CSV de Madrid:', error, row);
             return null;
