@@ -55,6 +55,37 @@ class SamplingDataService {
         this.csvPathGermany = path.join(__dirname, '../../Formatos de coordenadas/Alemania.csv');
         this.csvPathBulgaria = path.join(__dirname, '../../Formatos de coordenadas/Bulgaria.csv');
         this.csvPathLetonia = path.join(__dirname, '../../Formatos de coordenadas/Letonia.csv');
+        this.csvPathMadrid = path.join(__dirname, '../../Formatos de coordenadas/Madrid.csv');
+    }
+
+    /**
+     * Procesa una fila individual del CSV de Madrid
+     */
+
+    processSampleRowMadrid(row) {
+        try {
+            // Normalizar claves a snake_case y limpiar valores
+            const sample = {};
+            for (const key in row) {
+                const cleanKey = key.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                sample[cleanKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+            // Extraer lat/lon del campo 'coord_lat__long' (normalizado)
+            let lat = null, lon = null;
+            const coordRaw = sample['coord_lat_long'] || sample['coord_lat__long'] || '';
+            if (coordRaw && coordRaw.includes(',')) {
+                // Ejemplo: "56.738763, 23.220368"
+                const [latStr, lonStr] = coordRaw.split(',').map(s => s.trim());
+                lat = parseFloat(latStr.replace(',', '.'));
+                lon = parseFloat(lonStr.replace(',', '.'));
+            }
+            sample['lat'] = lat;
+            sample['lon'] = lon;
+            return sample;
+        } catch (error) {
+            console.error('Error procesando fila del CSV de Madrid:', error, row);
+            return null;
+        }
     }
 
     /**
@@ -134,6 +165,11 @@ class SamplingDataService {
                 separator = ',';
                 headers = undefined;
                 rowProcessor = this.processSampleRowLetonia.bind(this);
+            } else if (csvType === 'madrid') {
+                csvPath = this.csvPathMadrid;
+                separator = ',';
+                headers = undefined;
+                rowProcessor = this.processSampleRowMadrid.bind(this);
             } else {
                 csvPath = this.csvPath;
             }
