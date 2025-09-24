@@ -107,17 +107,23 @@ class SamplingDataService {
                 lon = parseFloat(lonStr);
             }
             // Solo devolver si ambos son números válidos
-            if (typeof lat === 'number' && !isNaN(lat) && typeof lon === 'number' && !isNaN(lon)) {
-                sample['lat'] = lat;
-                sample['lon'] = lon;
-                // También rellenar los campos Latitude/Longitude para la tabla
-                sample['Latitude'] = lat;
-                sample['Longitude'] = lon;
-                return sample;
-            } else {
-                console.warn('[Madrid] Fila descartada por coordenadas inválidas:', row);
-                return null;
-            }
+                if (typeof lat === 'number' && !isNaN(lat) && typeof lon === 'number' && !isNaN(lon)) {
+                    sample['lat'] = lat;
+                    sample['lon'] = lon;
+                    // También rellenar los campos Latitude/Longitude para la tabla
+                    sample['Latitude'] = lat;
+                    sample['Longitude'] = lon;
+                    return sample;
+                } else {
+                    let motivo = '';
+                    if (!row['Latitude'] || !row['Longitude']) {
+                        motivo = 'Faltan columnas Latitude o Longitude';
+                    } else if (isNaN(lat) || isNaN(lon)) {
+                        motivo = `No se pudo parsear Latitude/Longitude. Latitude: ${row['Latitude']}, Longitude: ${row['Longitude']}`;
+                    }
+                    console.warn('[Madrid][DESCARTADO] Fila descartada por coordenadas inválidas:', row, 'Motivo:', motivo);
+                    return null;
+                }
         } catch (error) {
             console.error('Error procesando fila del CSV de Madrid:', error, row);
             return null;

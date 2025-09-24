@@ -142,13 +142,13 @@ export class GeoDataController {
      */
     async getShapefile(req, res) {
         try {
-            logger.info('Procesando shapefile...');
-            const geojson = await shapefileService.processShapefile();
-            
+            const area = req.query.area || 'tamarguillo';
+            logger.info(`Procesando shapefile para área: ${area}`);
+            const geojson = await shapefileService.processShapefile(area);
             res.json({
                 success: true,
                 data: geojson,
-                message: 'Shapefile procesado correctamente'
+                message: `Shapefile procesado correctamente para área: ${area}`
             });
         } catch (error) {
             logger.error('Error obteniendo shapefile:', error);

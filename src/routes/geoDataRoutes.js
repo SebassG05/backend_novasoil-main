@@ -4,6 +4,7 @@ import geoDataController from '../controllers/geoDataController.js';
 const router = express.Router();
 
 // Rutas para datos geoespaciales
+// Ejemplo: /shapefile?area=madrid o /shapefile?area=tamarguillo
 router.get('/shapefile', geoDataController.getShapefile.bind(geoDataController));
 router.get('/shapefile/info', geoDataController.getShapefileInfo.bind(geoDataController));
 router.get('/sampling', geoDataController.getSamplingData.bind(geoDataController));
