@@ -137,6 +137,25 @@ export class GeoDataController {
             });
         }
     }
+
+    async getSamplingDataItaly(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('italy');
+            // Para Italia, mantener las claves originales como Madrid
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Italia procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Italia:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Italia',
+                error: error.message
+            });
+        }
+    }
     /**
      * Obtiene el shapefile procesado en formato GeoJSON
      */

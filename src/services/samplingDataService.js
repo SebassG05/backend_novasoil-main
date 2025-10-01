@@ -56,6 +56,7 @@ class SamplingDataService {
         this.csvPathBulgaria = path.join(__dirname, '../../Formatos de coordenadas/Bulgaria.csv');
         this.csvPathLetonia = path.join(__dirname, '../../Formatos de coordenadas/Letonia.csv');
         this.csvPathMadrid = path.join(__dirname, '../../Formatos de coordenadas/Madrid.csv');
+        this.csvPathItaly = path.join(__dirname, '../../Formatos de coordenadas/ITALY_2_CS_FLORA_DATA.csv');
     }
 
     /**
@@ -182,6 +183,111 @@ class SamplingDataService {
     }
 
     /**
+     * Procesa el CSV completo de Italia (formato transpuesto especial)
+     */
+    async processSamplingDataItaly() {
+        try {
+            if (!fs.existsSync(this.csvPathItaly)) {
+                throw new Error('Archivo CSV de Italia no encontrado');
+            }
+
+            const samples = [];
+            const csvContent = fs.readFileSync(this.csvPathItaly, 'utf8');
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            
+            // Crear dos objetos para los dos períodos de tiempo
+            const sample2015 = {
+                'Period': 'Pre-planting (October 2015)',
+                'Management': 'Conventional agronomic management with annual cereal crops',
+                'Coord (Lat & Long)': '43°28\'44"N 10°32\'55"E'
+            };
+            
+            const sample2024 = {
+                'Period': 'Post-planting (May 2024)', 
+                'Management': '9 years after planting with organic/biodynamic management',
+                'Coord (Lat & Long)': '43°28\'44"N 10°32\'55"E'
+            };
+
+            // Procesar cada línea del CSV
+            for (const line of lines) {
+                const columns = this.parseCSVLine(line);
+                if (columns.length >= 3 && columns[0].trim() && 
+                    !columns[0].includes('Italy 2: Flora') && 
+                    !columns[0].includes('Lavender pre-planting') &&
+                    columns[0] !== '') {
+                    
+                    const parameterName = columns[0].trim();
+                    const value2015 = columns[1] ? columns[1].trim() : 'NA';
+                    const value2024 = columns[2] ? columns[2].trim() : 'NA';
+                    
+                    sample2015[parameterName] = value2015;
+                    sample2024[parameterName] = value2024;
+                }
+            }
+
+            // Procesar coordenadas para ambas muestras
+            [sample2015, sample2024].forEach(sample => {
+                const coordRaw = sample['Coord (Lat & Long)'] || '';
+                let lat = null, lon = null;
+                if (coordRaw) {
+                    const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)"([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)"([EW])/i;
+                    const match = coordRaw.match(dmsRegex);
+                    if (match) {
+                        // Latitud
+                        let degLat = parseInt(match[1]);
+                        let minLat = parseInt(match[2]);
+                        let secLat = parseFloat(match[3]);
+                        let dirLat = match[4].toUpperCase();
+                        lat = degLat + minLat / 60 + secLat / 3600;
+                        if (dirLat === 'S') lat *= -1;
+                        
+                        // Longitud
+                        let degLon = parseInt(match[5]);
+                        let minLon = parseInt(match[6]);
+                        let secLon = parseFloat(match[7]);
+                        let dirLon = match[8].toUpperCase();
+                        lon = degLon + minLon / 60 + secLon / 3600;
+                        if (dirLon === 'W') lon *= -1;
+                    }
+                }
+                sample['lat'] = lat;
+                sample['lon'] = lon;
+            });
+
+            samples.push(sample2015, sample2024);
+            return samples;
+        } catch (error) {
+            console.error('Error procesando CSV de Italia:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Función auxiliar para parsear líneas CSV con comillas
+     */
+    parseCSVLine(line) {
+        const result = [];
+        let current = '';
+        let inQuotes = false;
+        
+        for (let i = 0; i < line.length; i++) {
+            const char = line[i];
+            
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                result.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        
+        result.push(current);
+        return result;
+    }
+
+    /**
      * Procesa el archivo CSV de datos de muestreo
      */
     async processSamplingData(csvType = 'tamarguillo') {
@@ -212,6 +318,9 @@ class SamplingDataService {
                 separator = ',';
                 headers = undefined;
                 rowProcessor = this.processSampleRowMadrid.bind(this);
+            } else if (csvType === 'italy') {
+                // Italia tiene un formato especial transpuesto, usar función dedicada
+                return await this.processSamplingDataItaly();
             } else {
                 csvPath = this.csvPath;
             }

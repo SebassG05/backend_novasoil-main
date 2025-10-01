@@ -13,6 +13,7 @@ router.get('/sampling/bulgaria', geoDataController.getSamplingDataBulgaria.bind(
 router.get('/sampling/estonia', geoDataController.getSamplingDataEstonia.bind(geoDataController));
 router.get('/sampling/letonia', geoDataController.getSamplingDataLetonia.bind(geoDataController));
 router.get('/sampling/madrid', geoDataController.getSamplingDataMadrid.bind(geoDataController));
+router.get('/sampling/italy', geoDataController.getSamplingDataItaly.bind(geoDataController));
 router.get('/sampling/stats', geoDataController.getSamplingStats.bind(geoDataController));
 router.get('/sampling/:code', geoDataController.getSampleByCode.bind(geoDataController));
 router.get('/all', geoDataController.getAllGeoData.bind(geoDataController));
