@@ -156,6 +156,62 @@ export class GeoDataController {
             });
         }
     }
+
+    async getSamplingDataItalyCiraa(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('italy-ciraa');
+            // Para Italia CIRAA, mantener las claves originales
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Italia CIRAA procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Italia CIRAA:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Italia CIRAA',
+                error: error.message
+            });
+        }
+    }
+
+    async getSamplingDataItalyCiraa2(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('italy-ciraa2');
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Italia CIRAA2 (Tillage Systems) procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Italia CIRAA2:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Italia CIRAA2',
+                error: error.message
+            });
+        }
+    }
+
+    async getSamplingDataItalyCiraa3(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('italy-ciraa3');
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Italia CIRAA3 (MASCOT) procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Italia CIRAA3:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Italia CIRAA3',
+                error: error.message
+            });
+        }
+    }
+
     /**
      * Obtiene el shapefile procesado en formato GeoJSON
      */

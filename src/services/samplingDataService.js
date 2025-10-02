@@ -57,6 +57,9 @@ class SamplingDataService {
         this.csvPathLetonia = path.join(__dirname, '../../Formatos de coordenadas/Letonia.csv');
         this.csvPathMadrid = path.join(__dirname, '../../Formatos de coordenadas/Madrid.csv');
         this.csvPathItaly = path.join(__dirname, '../../Formatos de coordenadas/ITALY_2_CS_FLORA_DATA.csv');
+        this.csvPathItalyCiraa = path.join(__dirname, '../../Formatos de coordenadas/ITALY_CIRAA1.csv');
+        this.csvPathItalyCiraa2 = path.join(__dirname, '../../Formatos de coordenadas/ITALY_CIRAA2.csv');
+        this.csvPathItalyCiraa3 = path.join(__dirname, '../../Formatos de coordenadas/ITALY_CIRAA3.csv');
     }
 
     /**
@@ -288,6 +291,143 @@ class SamplingDataService {
     }
 
     /**
+     * Procesa el CSV completo de Italia CIRAA (formato tabular)
+     */
+    async processSamplingDataItalyCiraa() {
+        try {
+            if (!fs.existsSync(this.csvPathItalyCiraa)) {
+                throw new Error('Archivo CSV de Italia CIRAA no encontrado');
+            }
+
+            const samples = [];
+            const csvContent = fs.readFileSync(this.csvPathItalyCiraa, 'utf8');
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            
+            // Skip header lines
+            let dataStartIndex = 0;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('TILLAGE,N LEVEL,COVER CROP')) {
+                    dataStartIndex = i + 1;
+                    break;
+                }
+            }
+
+            // Parse headers
+            const headerLine = lines[dataStartIndex - 1];
+            const headers = headerLine.split(',').map(h => h.trim().replace(/"/g, ''));
+            
+            // Process data lines
+            for (let i = dataStartIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                
+                if (values.length >= headers.length) {
+                    const sample = {};
+                    
+                    for (let j = 0; j < headers.length; j++) {
+                        sample[headers[j]] = values[j] || '';
+                    }
+                    
+                    // Add derived fields for better display
+                    sample['Treatment'] = `${sample['TILLAGE']} - ${sample['N LEVEL']}N - ${sample['COVER CROP']}`;
+                    sample['Description'] = `Tillage: ${sample['TILLAGE']}, Nitrogen Level: ${sample['N LEVEL']}, Cover Crop: ${sample['COVER CROP']}`;
+                    sample['Year'] = sample['YEAR'] || '';
+                    sample['ID'] = samples.length + 1;
+                    sample['Date'] = sample['YEAR'] ? `Year ${sample['YEAR']}` : 'Not specified';
+                    sample['SamplingType'] = `${sample['TILLAGE']}-${sample['COVER CROP']}`;
+                    sample['LithologyDescription'] = sample['Treatment'];
+                    sample['Observations'] = `Clay: ${sample['CLAY (g 100 g-1)']}%, Silt: ${sample['SILT (g 100 g-1)']}%, Sand: ${sample['SAND (g 100 g-1)']}%, pH: ${sample['pH']}, Total N: ${sample['Total N [g kg-1]']} g/kg, SOM: ${sample['SOM [g 100 g -1]']}%, C:N ratio: ${sample['C:N ratio']}`;
+                    
+                    // Use fixed coordinates for the CIRAA experiment site
+                    sample['Coordinates'] = '43.669059,10.310458';
+                    sample['lat'] = 43.669059;
+                    sample['lon'] = 10.310458;
+                    
+                    samples.push(sample);
+                }
+            }
+
+            console.log(`Procesados ${samples.length} muestras de Italia CIRAA`);
+            return samples;
+
+        } catch (error) {
+            console.error('Error procesando CSV de Italia CIRAA:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Función simple para procesar CIRAA2 y CIRAA3 CSVs
+     */
+    async processSimpleCiraaCSV(csvPath, datasetName) {
+        try {
+            if (!fs.existsSync(csvPath)) {
+                throw new Error(`Archivo CSV de ${datasetName} no encontrado`);
+            }
+
+            const samples = [];
+            const csvContent = fs.readFileSync(csvPath, 'utf8');
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            
+            // Buscar la línea de headers - para CIRAA2 buscar "SYSTEM" y para CIRAA3 otros identificadores
+            let headerIndex = -1;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].toLowerCase();
+                if (line.includes('system') && line.includes('year') || 
+                    line.includes('tillage') && line.includes('system')) {
+                    headerIndex = i;
+                    break;
+                }
+            }
+            
+            if (headerIndex === -1) {
+                console.log(`No se encontraron headers en ${datasetName}`);
+                return samples;
+            }
+            
+            const headers = lines[headerIndex].split(',').map(h => h.trim().replace(/"/g, ''));
+            console.log(`Headers encontrados en ${datasetName}:`, headers);
+            
+            // Procesar datos
+            for (let i = headerIndex + 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                if (values.length >= 2 && values[0] && values[1]) {
+                    const sample = {};
+                    
+                    headers.forEach((header, index) => {
+                        if (values[index]) {
+                            sample[header] = values[index];
+                        }
+                    });
+                    
+                    // Campos básicos para la tabla - asegurar que no hay desplazamiento
+                    sample['ID'] = samples.length + 1;
+                    sample['DATE'] = sample['YEAR'] || 'N/A';
+                    sample['SAMPLINGTYPE'] = 'N/A';
+                    sample['DESCRIPTION'] = `${datasetName} - undefined`;
+                    sample['COORDINATES'] = '43.669059,10.310458';
+                    sample['LAT'] = 43.669059;
+                    sample['LON'] = 10.310458;
+                    
+                    samples.push(sample);
+                }
+            }
+
+            console.log(`Procesados ${samples.length} muestras de ${datasetName}`);
+            return samples;
+
+        } catch (error) {
+            console.error(`Error procesando CSV de ${datasetName}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Procesa el archivo CSV de datos de muestreo
      */
     async processSamplingData(csvType = 'tamarguillo') {
@@ -321,6 +461,15 @@ class SamplingDataService {
             } else if (csvType === 'italy') {
                 // Italia tiene un formato especial transpuesto, usar función dedicada
                 return await this.processSamplingDataItaly();
+            } else if (csvType === 'italy-ciraa') {
+                // Italia CIRAA tiene un formato tabular especial, usar función dedicada
+                return await this.processSamplingDataItalyCiraa();
+            } else if (csvType === 'italy-ciraa2') {
+                // Italia CIRAA2 (CSV simplificado)
+                return await this.processSimpleCiraaCSV(this.csvPathItalyCiraa2, 'CIRAA2');
+            } else if (csvType === 'italy-ciraa3') {
+                // Italia CIRAA3 (CSV simplificado)
+                return await this.processSimpleCiraaCSV(this.csvPathItalyCiraa3, 'CIRAA3');
             } else {
                 csvPath = this.csvPath;
             }

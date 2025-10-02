@@ -14,6 +14,9 @@ router.get('/sampling/estonia', geoDataController.getSamplingDataEstonia.bind(ge
 router.get('/sampling/letonia', geoDataController.getSamplingDataLetonia.bind(geoDataController));
 router.get('/sampling/madrid', geoDataController.getSamplingDataMadrid.bind(geoDataController));
 router.get('/sampling/italy', geoDataController.getSamplingDataItaly.bind(geoDataController));
+router.get('/sampling/italy-ciraa', geoDataController.getSamplingDataItalyCiraa.bind(geoDataController));
+router.get('/sampling/italy-ciraa2', geoDataController.getSamplingDataItalyCiraa2.bind(geoDataController));
+router.get('/sampling/italy-ciraa3', geoDataController.getSamplingDataItalyCiraa3.bind(geoDataController));
 router.get('/sampling/stats', geoDataController.getSamplingStats.bind(geoDataController));
 router.get('/sampling/:code', geoDataController.getSampleByCode.bind(geoDataController));
 router.get('/all', geoDataController.getAllGeoData.bind(geoDataController));
