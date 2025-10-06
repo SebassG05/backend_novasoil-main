@@ -84,16 +84,8 @@ export class GeoDataController {
         async getSamplingDataEstonia(req, res) {
         try {
             let samples = await samplingDataService.processSamplingData('estonia');
-            // Limpiar claves y normalizar formato para frontend
-            samples = samples.map(row => {
-                const cleanRow = {};
-                Object.keys(row).forEach(k => {
-                    // Eliminar espacios y caracteres raros de las claves
-                    const cleanKey = k.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
-                    cleanRow[cleanKey] = row[k];
-                });
-                return cleanRow;
-            });
+            // Para Estonia, mantener las claves originales del CSV para preservar la estructura completa
+            // No normalizar las claves como se hace con otros países
             res.json({
                 success: true,
                 data: samples,
