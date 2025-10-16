@@ -34,6 +34,33 @@ export class GeoDataController {
         }
     }
 
+    async getSamplingDataAsaja(req, res) {
+        try {
+            let samples = await samplingDataService.processSamplingData('asaja');
+            // Normalizar claves igual que Alemania, Letonia, etc.
+            samples = samples.map(row => {
+                const cleanRow = {};
+                Object.keys(row).forEach(k => {
+                    const cleanKey = k.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                    cleanRow[cleanKey] = row[k];
+                });
+                return cleanRow;
+            });
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo de Asaja procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo de Asaja:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo de Asaja',
+                error: error.message
+            });
+        }
+    }
+
     async getSamplingDataMadrid(req, res) {
         try {
             let samples = await samplingDataService.processSamplingData('madrid');

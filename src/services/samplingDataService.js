@@ -470,6 +470,11 @@ class SamplingDataService {
             } else if (csvType === 'italy-ciraa3') {
                 // Italia CIRAA3 (CSV simplificado)
                 return await this.processSimpleCiraaCSV(this.csvPathItalyCiraa3, 'CIRAA3');
+            } else if (csvType === 'asaja') {
+                csvPath = path.join(__dirname, '../../Formatos de coordenadas/Asaja.csv');
+                separator = ',';
+                headers = undefined;
+                rowProcessor = this.processSampleRowAsaja.bind(this);
             } else {
                 csvPath = this.csvPath;
             }
@@ -570,6 +575,22 @@ class SamplingDataService {
             };
         } catch (error) {
             console.error('Error procesando fila del CSV:', error, row);
+            return null;
+        }
+    }
+
+    processSampleRowAsaja(row) {
+        try {
+            // Normalizar claves a snake_case y limpiar valores
+            const sample = {};
+            for (const key in row) {
+                const cleanKey = key.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                sample[cleanKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
+            }
+            // No validar coordenadas, devolver todo
+            return sample;
+        } catch (error) {
+            console.error('Error procesando fila del CSV de Asaja:', error, row);
             return null;
         }
     }
