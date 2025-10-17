@@ -587,8 +587,35 @@ class SamplingDataService {
                 const cleanKey = key.trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
                 sample[cleanKey] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            // No validar coordenadas, devolver todo
-            return sample;
+            // Normalizar y validar coordenadas
+            // En la mayoría de CSV españoles, X = longitud, Y = latitud
+            let lonRaw = sample['coord_x'];
+            let latRaw = sample['coord_y'];
+            if (latRaw && lonRaw && latRaw !== 'NA' && lonRaw !== 'NA') {
+                let latStr = String(latRaw).replace(/\s+/g, '');
+                let lonStr = String(lonRaw).replace(/\s+/g, '');
+                // Eliminar todos los puntos menos el último (el decimal)
+                if ((latStr.match(/\./g) || []).length > 1) {
+                    let parts = latStr.split('.');
+                    latStr = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+                }
+                if ((lonStr.match(/\./g) || []).length > 1) {
+                    let parts = lonStr.split('.');
+                    lonStr = parts.slice(0, -1).join('') + '.' + parts[parts.length - 1];
+                }
+                // Permitir valores negativos
+                let lat = parseFloat(latStr);
+                let lon = parseFloat(lonStr);
+                // Validar rango de coordenadas (latitud: -90 a 90, longitud: -180 a 180)
+                if (!isNaN(lat) && !isNaN(lon) && lat > -90 && lat < 90 && lon > -180 && lon < 180) {
+                    sample['lat'] = lat;
+                    sample['lon'] = lon;
+                    return sample;
+                }
+            }
+            // Si no son válidas, descartar
+            console.warn('[Asaja][DESCARTADO] Fila descartada por coordenadas inválidas:', row);
+            return null;
         } catch (error) {
             console.error('Error procesando fila del CSV de Asaja:', error, row);
             return null;
