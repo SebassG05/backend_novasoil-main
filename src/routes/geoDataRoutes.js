@@ -1,7 +1,14 @@
+
 import express from 'express';
 import geoDataController from '../controllers/geoDataController.js';
 
 const router = express.Router();
+
+router.get('/sampling/tamarguillo1', geoDataController.getSamplingDataTamarguillo1.bind(geoDataController));
+router.get('/sampling/tamarguillo2', geoDataController.getSamplingDataTamarguillo2.bind(geoDataController));
+router.get('/sampling/tamarguillo3', geoDataController.getSamplingDataTamarguillo3.bind(geoDataController));
+router.get('/sampling/estadisticos-topsoil', geoDataController.getEstadisticosTopsoil.bind(geoDataController));
+router.get('/sampling/estadisticos-subsoil', geoDataController.getEstadisticosSubsoil.bind(geoDataController));
 
 // Rutas para datos geoespaciales
 // Ejemplo: /shapefile?area=madrid o /shapefile?area=tamarguillo

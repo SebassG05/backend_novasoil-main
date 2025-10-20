@@ -8,6 +8,118 @@ const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
 
+        // --- TAMARGUILLO ---
+    /**
+     * Procesa los CSV de Tamarguillo para tres tablas
+     * tipo: 'tamarguillo1', 'tamarguillo2', 'tamarguillo3'
+     */
+    async processSamplingDataTamarguillo(tipo) {
+        // tamarguillo1: tabla Sampling Tamarguillo Park.csv
+        // tamarguillo2: SUBSOIL de estadísticos
+        // tamarguillo3: TOPSOIL de estadísticos
+        if (tipo === 'tamarguillo1') {
+            // Leer el CSV principal (una sola tabla)
+            const filePath = this.csvPath;
+            if (!fs.existsSync(filePath)) {
+                throw new Error('Archivo Sampling Tamarguillo Park.csv no encontrado');
+            }
+            const csvContent = fs.readFileSync(filePath, 'utf8');
+            const lines = csvContent.split(/\r?\n/);
+            const headers = lines[0].split(';').map(h => h.trim());
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i];
+                if (!row || row.trim() === '' || row.startsWith(';')) continue;
+                const values = row.split(';');
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+                }
+                data.push(obj);
+            }
+            return data;
+        } else if (tipo === 'tamarguillo2') {
+            // SUBSOIL del CSV estadísticos
+            const { subsoil } = await this.getEstadisticosTables();
+            return subsoil;
+        } else if (tipo === 'tamarguillo3') {
+            // TOPSOIL del CSV estadísticos
+            const { topsoil } = await this.getEstadisticosTables();
+            return topsoil;
+        } else {
+            throw new Error('Tipo de tabla Tamarguillo no válido');
+        }
+    }
+
+    /**
+     * Procesa el CSV ESTADISTICOS.SUELO - R. F-Q (1).csv y separa TOPSOIL y SUBSOIL
+     */
+    async getEstadisticosTables() {
+        const filePath = path.join(__dirname, '../../Formatos de coordenadas/ESTADISTICOS.SUELO - R. F-Q (1).csv');
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Archivo ESTADISTICOS.SUELO - R. F-Q (1).csv no encontrado');
+        }
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const lines = csvContent.split(/\r?\n/);
+
+        // Buscar los índices de inicio de cada tabla
+        let topsoilStart = -1, subsoilStart = -1;
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].includes('Muestra TOPSOIL')) topsoilStart = i;
+            if (lines[i].includes('Muestra  SUBSOIL')) subsoilStart = i;
+        }
+        if (topsoilStart === -1 || subsoilStart === -1) {
+            throw new Error('No se encontraron ambas tablas TOPSOIL y SUBSOIL en el CSV');
+        }
+
+        // Buscar fin de cada tabla
+        let topsoilEnd = subsoilStart - 1;
+        let subsoilEnd = lines.length;
+        for (let i = subsoilStart + 1; i < lines.length; i++) {
+            if (lines[i].trim() === '' && i > subsoilStart + 2) {
+                subsoilEnd = i;
+                break;
+            }
+        }
+
+        // Extraer headers y unidades para cada tabla
+        const topsoilHeaders = lines[topsoilStart].split(',').map(h => h.trim());
+        const topsoilUnits = lines[topsoilStart + 1].split(',').map(h => h.trim());
+        const subsoilHeaders = lines[subsoilStart].split(',').map(h => h.trim());
+        const subsoilUnits = lines[subsoilStart + 1].split(',').map(h => h.trim());
+
+        // Extraer datos de cada tabla
+        function parseTable(start, end, headers, units) {
+            const data = [];
+            for (let i = start + 2; i < end; i++) {
+                const row = lines[i];
+                if (!row || row.trim() === '' || row.startsWith(',')) continue;
+                const values = row.split(',');
+                if (values.length < 2) continue;
+                const obj = {};
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+                }
+                data.push(obj);
+            }
+            return data;
+        }
+
+        const topsoil = parseTable(topsoilStart, topsoilEnd, topsoilHeaders, topsoilUnits);
+        const subsoil = parseTable(subsoilStart, subsoilEnd, subsoilHeaders, subsoilUnits);
+        return { topsoil, subsoil };
+    }
+
+    async getEstadisticosTopsoil() {
+        const { topsoil } = await this.getEstadisticosTables();
+        return topsoil;
+    }
+
+    async getEstadisticosSubsoil() {
+        const { subsoil } = await this.getEstadisticosTables();
+        return subsoil;
+    }
+
     /**
      * Procesa una fila individual del CSV de Bulgaria
      */

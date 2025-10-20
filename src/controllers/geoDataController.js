@@ -3,6 +3,64 @@ import samplingDataService from '../services/samplingDataService.js';
 import logger from '../utils/logger.js';
 
 export class GeoDataController {
+
+        // --- TAMARGUILLO ---
+    async getSamplingDataTamarguillo1(req, res) {
+        try {
+            // Primer bloque de la tabla 1 del CSV principal
+            let samples = await samplingDataService.processSamplingDataTamarguillo('tamarguillo1');
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo Tamarguillo 1 procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo Tamarguillo 1:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo Tamarguillo 1',
+                error: error.message
+            });
+        }
+    }
+
+    async getSamplingDataTamarguillo2(req, res) {
+        try {
+            // Segundo bloque de la tabla 2 del CSV principal
+            let samples = await samplingDataService.processSamplingDataTamarguillo('tamarguillo2');
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo Tamarguillo 2 procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo Tamarguillo 2:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo Tamarguillo 2',
+                error: error.message
+            });
+        }
+    }
+
+    async getSamplingDataTamarguillo3(req, res) {
+        try {
+            // Tercera tabla, de un segundo CSV
+            let samples = await samplingDataService.processSamplingDataTamarguillo('tamarguillo3');
+            res.json({
+                success: true,
+                data: samples,
+                message: 'Datos de muestreo Tamarguillo 3 procesados correctamente'
+            });
+        } catch (error) {
+            logger.error('Error obteniendo datos de muestreo Tamarguillo 3:', error);
+            res.status(500).json({
+                success: false,
+                message: 'Error procesando datos de muestreo Tamarguillo 3',
+                error: error.message
+            });
+        }
+    }
     /**
      * Obtiene los datos de muestreo de Alemania
      */
@@ -31,6 +89,28 @@ export class GeoDataController {
                 message: 'Error procesando datos de muestreo de Alemania',
                 error: error.message
             });
+        }
+    }
+
+    // Devuelve la tabla TOPSOIL del CSV ESTADISTICOS.SUELO - R. F-Q (1).csv
+    async getEstadisticosTopsoil(req, res) {
+        try {
+            const data = await samplingDataService.getEstadisticosTopsoil();
+            res.json({ success: true, data, message: 'Tabla TOPSOIL procesada correctamente' });
+        } catch (error) {
+            logger.error('Error obteniendo TOPSOIL:', error);
+            res.status(500).json({ success: false, message: 'Error procesando TOPSOIL', error: error.message });
+        }
+    }
+
+    // Devuelve la tabla SUBSOIL del CSV ESTADISTICOS.SUELO - R. F-Q (1).csv
+    async getEstadisticosSubsoil(req, res) {
+        try {
+            const data = await samplingDataService.getEstadisticosSubsoil();
+            res.json({ success: true, data, message: 'Tabla SUBSOIL procesada correctamente' });
+        } catch (error) {
+            logger.error('Error obteniendo SUBSOIL:', error);
+            res.status(500).json({ success: false, message: 'Error procesando SUBSOIL', error: error.message });
         }
     }
 
