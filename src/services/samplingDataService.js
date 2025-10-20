@@ -65,8 +65,8 @@ class SamplingDataService {
         // Buscar los índices de inicio de cada tabla
         let topsoilStart = -1, subsoilStart = -1;
         for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes('Muestra TOPSOIL')) topsoilStart = i;
-            if (lines[i].includes('Muestra  SUBSOIL')) subsoilStart = i;
+            if (lines[i].includes('TOPSOIL Sample')) topsoilStart = i;
+            if (lines[i].includes('SUBSOIL  Sample')) subsoilStart = i;
         }
         if (topsoilStart === -1 || subsoilStart === -1) {
             throw new Error('No se encontraron ambas tablas TOPSOIL y SUBSOIL en el CSV');
