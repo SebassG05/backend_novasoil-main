@@ -67,14 +67,27 @@ export class GeoDataController {
     async getSamplingDataGermany(req, res) {
         try {
             let samples = await samplingDataService.processSamplingData('germany');
-            // Limpiar claves y normalizar formato para frontend
+            // Limpiar claves para frontend pero PRESERVAR mayúsculas/minúsculas
+            // Además construiremos un mapa original->clean para preservar las etiquetas originales
+            let originalHeaderMap = {};
+            if (samples.length > 0) {
+                Object.keys(samples[0]).forEach(k => {
+                    const orig = String(k).trim();
+                    let cleanKey = orig.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    if (!cleanKey) cleanKey = orig;
+                    originalHeaderMap[cleanKey] = orig;
+                });
+            }
+
             samples = samples.map(row => {
                 const cleanRow = {};
                 Object.keys(row).forEach(k => {
-                    // Eliminar espacios y caracteres raros de las claves
-                    const cleanKey = k.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+                    let cleanKey = String(k).trim().replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+                    if (!cleanKey) cleanKey = String(k).trim();
                     cleanRow[cleanKey] = row[k];
                 });
+                // Attach header map so frontend can render original labels (parentheses, slashes, etc.)
+                cleanRow.__originalHeaderMap = originalHeaderMap;
                 return cleanRow;
             });
             res.json({
