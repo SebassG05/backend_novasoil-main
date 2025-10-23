@@ -12,7 +12,7 @@ async function startServer() {
 
         app.listen(PORT, () => {
             logger.info(`Server listening on port ${PORT}`);
-            logger.info(`API URL: http://localhost:${PORT}`);
+            logger.info(`API URL: /api (proxied by Nginx)`);
         });
     } catch (err) {
         logger.error('Fatal error starting the server', { error: err.message, stack: err.stack });
