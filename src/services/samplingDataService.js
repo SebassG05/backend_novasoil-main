@@ -599,12 +599,10 @@ class SamplingDataService {
                         resolve(samples);
                     })
                     .on('error', (error) => {
-                        console.error('Error leyendo archivo CSV:', error);
                         reject(error);
                     });
             });
         } catch (error) {
-            console.error('Error procesando datos de muestreo:', error);
             throw error;
         }
     }
@@ -653,7 +651,6 @@ class SamplingDataService {
             const latitude = parseFloat(row['Y_WG84']?.replace(',', '.'));
             
             if (isNaN(longitude) || isNaN(latitude)) {
-                console.warn(`Coordenadas inválidas para la muestra ${row.code}`);
                 return null;
             }
 
@@ -778,7 +775,6 @@ class SamplingDataService {
                 sample && sample.properties.code === code
             );
         } catch (error) {
-            console.error('Error buscando muestra por código:', error);
             throw error;
         }
     }
