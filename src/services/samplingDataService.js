@@ -538,7 +538,7 @@ class SamplingDataService {
             let csvPath, separator = ';', headers = undefined, rowProcessor = this.processSampleRow.bind(this);
             if (csvType === 'germany') {
                 csvPath = this.csvPathGermany;
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowGermany.bind(this);
             } else if (csvType === 'bulgaria') {
