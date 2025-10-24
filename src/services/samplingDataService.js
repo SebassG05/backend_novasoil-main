@@ -409,7 +409,7 @@ class SamplingDataService {
             // Skip header lines
             let dataStartIndex = 0;
             for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('TILLAGE,N LEVEL,COVER CROP')) {
+                if (lines[i].includes('TILLAGE;N LEVEL;COVER CROP')) {
                     dataStartIndex = i + 1;
                     break;
                 }
