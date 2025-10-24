@@ -553,7 +553,7 @@ class SamplingDataService {
                 rowProcessor = this.processSampleRowEstonia.bind(this);
             } else if (csvType === 'letonia') {
                 csvPath = this.csvPathLetonia;
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowLetonia.bind(this);
             } else if (csvType === 'madrid') {
