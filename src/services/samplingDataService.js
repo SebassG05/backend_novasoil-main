@@ -575,7 +575,7 @@ class SamplingDataService {
                 return await this.processSimpleCiraaCSV(this.csvPathItalyCiraa3, 'CIRAA3');
             } else if (csvType === 'asaja') {
                 csvPath = path.join(__dirname, '../../Formatos de coordenadas/Asaja.csv');
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowAsaja.bind(this);
             } else {
