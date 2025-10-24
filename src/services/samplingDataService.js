@@ -417,14 +417,14 @@ class SamplingDataService {
 
             // Parse headers
             const headerLine = lines[dataStartIndex - 1];
-            const headers = headerLine.split(',').map(h => h.trim().replace(/"/g, ''));
+            const headers = headerLine.split(';').map(h => h.trim().replace(/"/g, ''));
             
             // Process data lines
             for (let i = dataStartIndex; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = line.split(';').map(v => v.trim().replace(/"/g, ''));
                 
                 if (values.length >= headers.length) {
                     const sample = {};
