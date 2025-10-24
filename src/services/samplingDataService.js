@@ -418,21 +418,21 @@ class SamplingDataService {
             // Parse headers
             const headerLine = lines[dataStartIndex - 1];
             const headers = headerLine.split(';').map(h => h.trim().replace(/"/g, ''));
-            
+
             // Process data lines
             for (let i = dataStartIndex; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                
+
                 const values = line.split(';').map(v => v.trim().replace(/"/g, ''));
-                
+
                 if (values.length >= headers.length) {
                     const sample = {};
-                    
+
                     for (let j = 0; j < headers.length; j++) {
                         sample[headers[j]] = values[j] || '';
                     }
-                    
+
                     // Add derived fields for better display
                     sample['Treatment'] = `${sample['TILLAGE']} - ${sample['N LEVEL']}N - ${sample['COVER CROP']}`;
                     sample['Description'] = `Tillage: ${sample['TILLAGE']}, Nitrogen Level: ${sample['N LEVEL']}, Cover Crop: ${sample['COVER CROP']}`;
@@ -442,12 +442,12 @@ class SamplingDataService {
                     sample['SamplingType'] = `${sample['TILLAGE']}-${sample['COVER CROP']}`;
                     sample['LithologyDescription'] = sample['Treatment'];
                     sample['Observations'] = `Clay: ${sample['CLAY (g 100 g-1)']}%, Silt: ${sample['SILT (g 100 g-1)']}%, Sand: ${sample['SAND (g 100 g-1)']}%, pH: ${sample['pH']}, Total N: ${sample['Total N [g kg-1]']} g/kg, SOM: ${sample['SOM [g 100 g -1]']}%, C:N ratio: ${sample['C:N ratio']}`;
-                    
+
                     // Use fixed coordinates for the CIRAA experiment site
                     sample['Coordinates'] = '43.669059,10.310458';
                     sample['lat'] = 43.669059;
                     sample['lon'] = 10.310458;
-                    
+
                     samples.push(sample);
                 }
             }
