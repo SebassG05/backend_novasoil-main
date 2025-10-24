@@ -490,7 +490,7 @@ class SamplingDataService {
                 return samples;
             }
             
-            const headers = lines[headerIndex].split(',').map(h => h.trim().replace(/"/g, ''));
+            const headers = lines[headerIndex].split(';').map(h => h.trim().replace(/"/g, ''));
             console.log(`Headers encontrados en ${datasetName}:`, headers);
             
             // Procesar datos
@@ -498,7 +498,7 @@ class SamplingDataService {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = line.split(';').map(v => v.trim().replace(/"/g, ''));
                 if (values.length >= 2 && values[0] && values[1]) {
                     const sample = {};
                     
