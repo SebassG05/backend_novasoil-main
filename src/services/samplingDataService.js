@@ -7,6 +7,55 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
+    /**
+     * Procesa el CSV de Tamarguillo para profundidad 0-25cm
+     */
+    async getTamarguilloDepth0_25() {
+        const filePath = path.join(__dirname, '../../Formatos de coordenadas/Tamarguillo_Case_Study_Depth_0_25cm.csv');
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Archivo Tamarguillo_Case_Study_Depth_0_25cm.csv no encontrado');
+        }
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const lines = csvContent.split(/\r?\n/);
+        const headers = lines[0].split(';').map(h => h.trim());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i];
+            if (!row || row.trim() === '' || row.startsWith(';')) continue;
+            const values = row.split(';');
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+            }
+            data.push(obj);
+        }
+        return data;
+    }
+
+    /**
+     * Procesa el CSV de Tamarguillo para profundidad 25-50cm
+     */
+    async getTamarguilloDepth25_50() {
+        const filePath = path.join(__dirname, '../../Formatos de coordenadas/Tamarguillo_Case_Study_Depth_25_50_cm (1).csv');
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Archivo Tamarguillo_Case_Study_Depth_25_50_cm (1).csv no encontrado');
+        }
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const lines = csvContent.split(/\r?\n/);
+        const headers = lines[0].split(';').map(h => h.trim());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i];
+            if (!row || row.trim() === '' || row.startsWith(';')) continue;
+            const values = row.split(';');
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+            }
+            data.push(obj);
+        }
+        return data;
+    }
 
         // --- TAMARGUILLO ---
     /**
