@@ -4,9 +4,9 @@ import geoDataController from '../controllers/geoDataController.js';
 
 const router = express.Router();
 
-router.get('/sampling/tamarguillo1', geoDataController.getSamplingDataTamarguillo1.bind(geoDataController));
-router.get('/sampling/tamarguillo2', geoDataController.getSamplingDataTamarguillo2.bind(geoDataController));
-router.get('/sampling/tamarguillo3', geoDataController.getSamplingDataTamarguillo3.bind(geoDataController));
+// Nuevos endpoints para los CSVs limpios de Tamarguillo
+router.get('/sampling/tamarguillo-depth-0-25', geoDataController.getTamarguilloDepth0_25.bind(geoDataController));
+router.get('/sampling/tamarguillo-depth-25-50', geoDataController.getTamarguilloDepth25_50.bind(geoDataController));
 router.get('/sampling/estadisticos-topsoil', geoDataController.getEstadisticosTopsoil.bind(geoDataController));
 router.get('/sampling/estadisticos-subsoil', geoDataController.getEstadisticosSubsoil.bind(geoDataController));
 
