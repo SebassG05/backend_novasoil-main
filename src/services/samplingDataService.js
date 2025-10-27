@@ -175,15 +175,24 @@ class SamplingDataService {
             for (const key in row) {
                 sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            // 1. Usar columnas Lat y Lon si existen y son válidas
             let lat = null, lon = null;
+            // 1. Usar columnas Lat y Lon si existen y son válidas
             const latRaw = sample['Lat'] || sample['lat'] || sample['LAT'] || '';
             const lonRaw = sample['Lon'] || sample['lon'] || sample['LON'] || '';
             if (latRaw && lonRaw) {
                 lat = parseFloat(String(latRaw).replace(',', '.'));
                 lon = parseFloat(String(lonRaw).replace(',', '.'));
             }
-            // 2. Si no existen, intentar extraer de Coords
+            // 2. Si no existen, intentar usar coordY como latitud y coordX como longitud (como Alemania)
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordXRaw = sample['coordX'] || sample['coordx'] || '';
+                const coordYRaw = sample['coordY'] || sample['coordy'] || '';
+                if (coordXRaw && coordYRaw) {
+                    lat = parseFloat(String(coordYRaw).replace(',', '.'));
+                    lon = parseFloat(String(coordXRaw).replace(',', '.'));
+                }
+            }
+            // 3. Si tampoco existen, intentar extraer de Coords
             if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
                 const coordRaw = sample['Coords'] || sample['coords'] || '';
                 if (coordRaw) {
