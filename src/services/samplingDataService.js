@@ -179,7 +179,7 @@ class SamplingDataService {
             const coordRaw = sample['Coords'] || sample['coords'] || '';
             let lat = null, lon = null;
             if (coordRaw) {
-                // Formato esperado: 42°18'23.001''N 25°00'21.681''E
+                // 1. Intentar DMS clásico
                 const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
                 const match = coordRaw.match(dmsRegex);
                 if (match) {
@@ -197,6 +197,15 @@ class SamplingDataService {
                     let dirLon = match[8].toUpperCase();
                     lon = degLon + minLon / 60 + secLon / 3600;
                     if (dirLon === 'W') lon *= -1;
+                } else {
+                    // 2. Intentar decimal separado por espacio o coma
+                    // Ejemplo: "42.12345, 25.67890" o "42.12345 25.67890"
+                    const decimalRegex = /(-?\d{1,3}[\.,]\d+)\s*[, ]\s*(-?\d{1,3}[\.,]\d+)/;
+                    const matchDec = coordRaw.match(decimalRegex);
+                    if (matchDec) {
+                        lat = parseFloat(matchDec[1].replace(',', '.'));
+                        lon = parseFloat(matchDec[2].replace(',', '.'));
+                    }
                 }
             }
             sample['lat'] = lat;
