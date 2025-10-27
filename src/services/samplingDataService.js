@@ -677,23 +677,25 @@ class SamplingDataService {
             for (const key in row) {
                 sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-
-            // Mejorar lógica de coordenadas
-            const coordRaw = sample['Coord (Lat & Long)'] || sample['Coord'] || '';
-            let coordX = '';
-            let coordY = '';
-            if (coordRaw.includes(';')) {
-                // Ejemplo: "48° 17' 59.40" N;  9° 4' 55.37" O"
-                const [lat, lon] = coordRaw.split(';');
-                coordY = lat.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
-                coordX = lon.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
-            } else if (coordRaw) {
-                // Si solo hay una coordenada, poner en Y
-                coordY = coordRaw.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
+            // 1. Usar columnas lat/lon si existen y son válidas
+            let lat = null, lon = null;
+            const latRaw = sample['lat'] || sample['Lat'] || sample['LAT'] || '';
+            const lonRaw = sample['lon'] || sample['Lon'] || sample['LON'] || '';
+            if (latRaw && lonRaw) {
+                lat = parseFloat(String(latRaw).replace(',', '.'));
+                lon = parseFloat(String(lonRaw).replace(',', '.'));
             }
-            sample['coordX'] = coordX;
-            sample['coordY'] = coordY;
-
+            // 2. Si no existen, intentar usar coordY como latitud y coordX como longitud (asumiendo grados decimales)
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordXRaw = sample['coordX'] || sample['coordx'] || '';
+                const coordYRaw = sample['coordY'] || sample['coordy'] || '';
+                if (coordXRaw && coordYRaw) {
+                    lat = parseFloat(String(coordYRaw).replace(',', '.'));
+                    lon = parseFloat(String(coordXRaw).replace(',', '.'));
+                }
+            }
+            sample['lat'] = lat;
+            sample['lon'] = lon;
             return sample;
         } catch (error) {
             console.error('Error procesando fila del CSV de Alemania:', error, row);
