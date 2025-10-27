@@ -66,7 +66,7 @@ class SamplingDataService {
         // tamarguillo1: tabla Sampling Tamarguillo Park.csv
         // tamarguillo2: SUBSOIL de estadísticos
         // tamarguillo3: TOPSOIL de estadísticos
-        if (tipo === 'tamarguillo1') {
+        if (tipo === 'tamarguillo1' || tipo === 'tamarguillo3') {
             // Leer el CSV principal (una sola tabla)
             const filePath = this.csvPath;
             if (!fs.existsSync(filePath)) {
@@ -91,10 +91,6 @@ class SamplingDataService {
             // SUBSOIL del CSV estadísticos
             const { subsoil } = await this.getEstadisticosTables();
             return subsoil;
-        } else if (tipo === 'tamarguillo3') {
-            // TOPSOIL del CSV estadísticos
-            const { topsoil } = await this.getEstadisticosTables();
-            return topsoil;
         } else {
             throw new Error('Tipo de tabla Tamarguillo no válido');
         }
