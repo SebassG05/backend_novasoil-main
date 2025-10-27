@@ -175,36 +175,42 @@ class SamplingDataService {
             for (const key in row) {
                 sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            // Extraer coordenadas del campo 'Coords'
-            const coordRaw = sample['Coords'] || sample['coords'] || '';
+            // 1. Usar columnas Lat y Lon si existen y son válidas
             let lat = null, lon = null;
-            if (coordRaw) {
-                // 1. Intentar DMS clásico
-                const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
-                const match = coordRaw.match(dmsRegex);
-                if (match) {
-                    // Latitud
-                    let degLat = parseInt(match[1]);
-                    let minLat = parseInt(match[2]);
-                    let secLat = parseFloat(match[3]);
-                    let dirLat = match[4].toUpperCase();
-                    lat = degLat + minLat / 60 + secLat / 3600;
-                    if (dirLat === 'S') lat *= -1;
-                    // Longitud
-                    let degLon = parseInt(match[5]);
-                    let minLon = parseInt(match[6]);
-                    let secLon = parseFloat(match[7]);
-                    let dirLon = match[8].toUpperCase();
-                    lon = degLon + minLon / 60 + secLon / 3600;
-                    if (dirLon === 'W') lon *= -1;
-                } else {
-                    // 2. Intentar decimal separado por espacio o coma
-                    // Ejemplo: "42.12345, 25.67890" o "42.12345 25.67890"
-                    const decimalRegex = /(-?\d{1,3}[\.,]\d+)\s*[, ]\s*(-?\d{1,3}[\.,]\d+)/;
-                    const matchDec = coordRaw.match(decimalRegex);
-                    if (matchDec) {
-                        lat = parseFloat(matchDec[1].replace(',', '.'));
-                        lon = parseFloat(matchDec[2].replace(',', '.'));
+            const latRaw = sample['Lat'] || sample['lat'] || sample['LAT'] || '';
+            const lonRaw = sample['Lon'] || sample['lon'] || sample['LON'] || '';
+            if (latRaw && lonRaw) {
+                lat = parseFloat(String(latRaw).replace(',', '.'));
+                lon = parseFloat(String(lonRaw).replace(',', '.'));
+            }
+            // 2. Si no existen, intentar extraer de Coords
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordRaw = sample['Coords'] || sample['coords'] || '';
+                if (coordRaw) {
+                    // DMS clásico
+                    const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
+                    const match = coordRaw.match(dmsRegex);
+                    if (match) {
+                        let degLat = parseInt(match[1]);
+                        let minLat = parseInt(match[2]);
+                        let secLat = parseFloat(match[3]);
+                        let dirLat = match[4].toUpperCase();
+                        lat = degLat + minLat / 60 + secLat / 3600;
+                        if (dirLat === 'S') lat *= -1;
+                        let degLon = parseInt(match[5]);
+                        let minLon = parseInt(match[6]);
+                        let secLon = parseFloat(match[7]);
+                        let dirLon = match[8].toUpperCase();
+                        lon = degLon + minLon / 60 + secLon / 3600;
+                        if (dirLon === 'W') lon *= -1;
+                    } else {
+                        // Decimal separado por espacio o coma
+                        const decimalRegex = /(-?\d{1,3}[\.,]\d+)\s*[, ]\s*(-?\d{1,3}[\.,]\d+)/;
+                        const matchDec = coordRaw.match(decimalRegex);
+                        if (matchDec) {
+                            lat = parseFloat(matchDec[1].replace(',', '.'));
+                            lon = parseFloat(matchDec[2].replace(',', '.'));
+                        }
                     }
                 }
             }
