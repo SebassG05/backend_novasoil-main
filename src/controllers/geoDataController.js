@@ -43,6 +43,28 @@ export class GeoDataController {
         }
     }
 
+        // Devuelve la tabla de Tamarguillo profundidad 0-25cm
+    async getTamarguilloDepth0_25(req, res) {
+        try {
+            const data = await samplingDataService.getTamarguilloDepth0_25();
+            res.json({ success: true, data, message: 'Tabla Tamarguillo 0-25cm procesada correctamente' });
+        } catch (error) {
+            logger.error('Error obteniendo Tamarguillo 0-25cm:', error);
+            res.status(500).json({ success: false, message: 'Error procesando Tamarguillo 0-25cm', error: error.message });
+        }
+    }
+
+    // Devuelve la tabla de Tamarguillo profundidad 25-50cm
+    async getTamarguilloDepth25_50(req, res) {
+        try {
+            const data = await samplingDataService.getTamarguilloDepth25_50();
+            res.json({ success: true, data, message: 'Tabla Tamarguillo 25-50cm procesada correctamente' });
+        } catch (error) {
+            logger.error('Error obteniendo Tamarguillo 25-50cm:', error);
+            res.status(500).json({ success: false, message: 'Error procesando Tamarguillo 25-50cm', error: error.message });
+        }
+    }
+
     async getSamplingDataTamarguillo3(req, res) {
         try {
             // Tercera tabla, de un segundo CSV

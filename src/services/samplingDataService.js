@@ -7,6 +7,55 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 class SamplingDataService {
+    /**
+     * Procesa el CSV de Tamarguillo para profundidad 0-25cm
+     */
+    async getTamarguilloDepth0_25() {
+        const filePath = path.join(__dirname, '../../Formatos de coordenadas/Tamarguillo_Case_Study_Depth_0_25cm.csv');
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Archivo Tamarguillo_Case_Study_Depth_0_25cm.csv no encontrado');
+        }
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const lines = csvContent.split(/\r?\n/);
+        const headers = lines[0].split(';').map(h => h.trim());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i];
+            if (!row || row.trim() === '' || row.startsWith(';')) continue;
+            const values = row.split(';');
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+            }
+            data.push(obj);
+        }
+        return data;
+    }
+
+    /**
+     * Procesa el CSV de Tamarguillo para profundidad 25-50cm
+     */
+    async getTamarguilloDepth25_50() {
+        const filePath = path.join(__dirname, '../../Formatos de coordenadas/Tamarguillo_Case_Study_Depth_25_50_cm (1).csv');
+        if (!fs.existsSync(filePath)) {
+            throw new Error('Archivo Tamarguillo_Case_Study_Depth_25_50_cm (1).csv no encontrado');
+        }
+        const csvContent = fs.readFileSync(filePath, 'utf8');
+        const lines = csvContent.split(/\r?\n/);
+        const headers = lines[0].split(';').map(h => h.trim());
+        const data = [];
+        for (let i = 1; i < lines.length; i++) {
+            const row = lines[i];
+            if (!row || row.trim() === '' || row.startsWith(';')) continue;
+            const values = row.split(';');
+            const obj = {};
+            for (let j = 0; j < headers.length; j++) {
+                obj[headers[j] || `col${j}`] = values[j] !== undefined ? values[j].trim() : '';
+            }
+            data.push(obj);
+        }
+        return data;
+    }
 
         // --- TAMARGUILLO ---
     /**
@@ -17,7 +66,7 @@ class SamplingDataService {
         // tamarguillo1: tabla Sampling Tamarguillo Park.csv
         // tamarguillo2: SUBSOIL de estadísticos
         // tamarguillo3: TOPSOIL de estadísticos
-        if (tipo === 'tamarguillo1') {
+        if (tipo === 'tamarguillo1' || tipo === 'tamarguillo3') {
             // Leer el CSV principal (una sola tabla)
             const filePath = this.csvPath;
             if (!fs.existsSync(filePath)) {
@@ -42,10 +91,6 @@ class SamplingDataService {
             // SUBSOIL del CSV estadísticos
             const { subsoil } = await this.getEstadisticosTables();
             return subsoil;
-        } else if (tipo === 'tamarguillo3') {
-            // TOPSOIL del CSV estadísticos
-            const { topsoil } = await this.getEstadisticosTables();
-            return topsoil;
         } else {
             throw new Error('Tipo de tabla Tamarguillo no válido');
         }
@@ -130,28 +175,52 @@ class SamplingDataService {
             for (const key in row) {
                 sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-            // Extraer coordenadas del campo 'Coords'
-            const coordRaw = sample['Coords'] || sample['coords'] || '';
             let lat = null, lon = null;
-            if (coordRaw) {
-                // Formato esperado: 42°18'23.001''N 25°00'21.681''E
-                const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
-                const match = coordRaw.match(dmsRegex);
-                if (match) {
-                    // Latitud
-                    let degLat = parseInt(match[1]);
-                    let minLat = parseInt(match[2]);
-                    let secLat = parseFloat(match[3]);
-                    let dirLat = match[4].toUpperCase();
-                    lat = degLat + minLat / 60 + secLat / 3600;
-                    if (dirLat === 'S') lat *= -1;
-                    // Longitud
-                    let degLon = parseInt(match[5]);
-                    let minLon = parseInt(match[6]);
-                    let secLon = parseFloat(match[7]);
-                    let dirLon = match[8].toUpperCase();
-                    lon = degLon + minLon / 60 + secLon / 3600;
-                    if (dirLon === 'W') lon *= -1;
+            // 1. Usar columnas Lat y Lon si existen y son válidas
+            const latRaw = sample['Lat'] || sample['lat'] || sample['LAT'] || '';
+            const lonRaw = sample['Lon'] || sample['lon'] || sample['LON'] || '';
+            if (latRaw && lonRaw) {
+                lat = parseFloat(String(latRaw).replace(',', '.'));
+                lon = parseFloat(String(lonRaw).replace(',', '.'));
+            }
+            // 2. Si no existen, intentar usar coordY como latitud y coordX como longitud (como Alemania)
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordXRaw = sample['coordX'] || sample['coordx'] || '';
+                const coordYRaw = sample['coordY'] || sample['coordy'] || '';
+                if (coordXRaw && coordYRaw) {
+                    lat = parseFloat(String(coordYRaw).replace(',', '.'));
+                    lon = parseFloat(String(coordXRaw).replace(',', '.'));
+                }
+            }
+            // 3. Si tampoco existen, intentar extraer de Coords
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordRaw = sample['Coords'] || sample['coords'] || '';
+                if (coordRaw) {
+                    // DMS clásico
+                    const dmsRegex = /([0-9]{2})°([0-9]{2})'([0-9.]+)''([NS])\s+([0-9]{2})°([0-9]{2})'([0-9.]+)''([EW])/i;
+                    const match = coordRaw.match(dmsRegex);
+                    if (match) {
+                        let degLat = parseInt(match[1]);
+                        let minLat = parseInt(match[2]);
+                        let secLat = parseFloat(match[3]);
+                        let dirLat = match[4].toUpperCase();
+                        lat = degLat + minLat / 60 + secLat / 3600;
+                        if (dirLat === 'S') lat *= -1;
+                        let degLon = parseInt(match[5]);
+                        let minLon = parseInt(match[6]);
+                        let secLon = parseFloat(match[7]);
+                        let dirLon = match[8].toUpperCase();
+                        lon = degLon + minLon / 60 + secLon / 3600;
+                        if (dirLon === 'W') lon *= -1;
+                    } else {
+                        // Decimal separado por espacio o coma
+                        const decimalRegex = /(-?\d{1,3}[\.,]\d+)\s*[, ]\s*(-?\d{1,3}[\.,]\d+)/;
+                        const matchDec = coordRaw.match(decimalRegex);
+                        if (matchDec) {
+                            lat = parseFloat(matchDec[1].replace(',', '.'));
+                            lon = parseFloat(matchDec[2].replace(',', '.'));
+                        }
+                    }
                 }
             }
             sample['lat'] = lat;
@@ -409,7 +478,7 @@ class SamplingDataService {
             // Skip header lines
             let dataStartIndex = 0;
             for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('TILLAGE,N LEVEL,COVER CROP')) {
+                if (lines[i].includes('TILLAGE;N LEVEL;COVER CROP')) {
                     dataStartIndex = i + 1;
                     break;
                 }
@@ -417,22 +486,22 @@ class SamplingDataService {
 
             // Parse headers
             const headerLine = lines[dataStartIndex - 1];
-            const headers = headerLine.split(',').map(h => h.trim().replace(/"/g, ''));
-            
+            const headers = headerLine.split(';').map(h => h.trim().replace(/"/g, ''));
+
             // Process data lines
             for (let i = dataStartIndex; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-                
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-                
+
+                const values = line.split(';').map(v => v.trim().replace(/"/g, ''));
+
                 if (values.length >= headers.length) {
                     const sample = {};
-                    
+
                     for (let j = 0; j < headers.length; j++) {
                         sample[headers[j]] = values[j] || '';
                     }
-                    
+
                     // Add derived fields for better display
                     sample['Treatment'] = `${sample['TILLAGE']} - ${sample['N LEVEL']}N - ${sample['COVER CROP']}`;
                     sample['Description'] = `Tillage: ${sample['TILLAGE']}, Nitrogen Level: ${sample['N LEVEL']}, Cover Crop: ${sample['COVER CROP']}`;
@@ -442,12 +511,12 @@ class SamplingDataService {
                     sample['SamplingType'] = `${sample['TILLAGE']}-${sample['COVER CROP']}`;
                     sample['LithologyDescription'] = sample['Treatment'];
                     sample['Observations'] = `Clay: ${sample['CLAY (g 100 g-1)']}%, Silt: ${sample['SILT (g 100 g-1)']}%, Sand: ${sample['SAND (g 100 g-1)']}%, pH: ${sample['pH']}, Total N: ${sample['Total N [g kg-1]']} g/kg, SOM: ${sample['SOM [g 100 g -1]']}%, C:N ratio: ${sample['C:N ratio']}`;
-                    
+
                     // Use fixed coordinates for the CIRAA experiment site
                     sample['Coordinates'] = '43.669059,10.310458';
                     sample['lat'] = 43.669059;
                     sample['lon'] = 10.310458;
-                    
+
                     samples.push(sample);
                 }
             }
@@ -490,7 +559,7 @@ class SamplingDataService {
                 return samples;
             }
             
-            const headers = lines[headerIndex].split(',').map(h => h.trim().replace(/"/g, ''));
+            const headers = lines[headerIndex].split(';').map(h => h.trim().replace(/"/g, ''));
             console.log(`Headers encontrados en ${datasetName}:`, headers);
             
             // Procesar datos
@@ -498,7 +567,7 @@ class SamplingDataService {
                 const line = lines[i].trim();
                 if (!line) continue;
                 
-                const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                const values = line.split(';').map(v => v.trim().replace(/"/g, ''));
                 if (values.length >= 2 && values[0] && values[1]) {
                     const sample = {};
                     
@@ -538,12 +607,12 @@ class SamplingDataService {
             let csvPath, separator = ';', headers = undefined, rowProcessor = this.processSampleRow.bind(this);
             if (csvType === 'germany') {
                 csvPath = this.csvPathGermany;
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowGermany.bind(this);
             } else if (csvType === 'bulgaria') {
                 csvPath = this.csvPathBulgaria;
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowBulgaria.bind(this);
             } else if (csvType === 'estonia') {
@@ -553,7 +622,7 @@ class SamplingDataService {
                 rowProcessor = this.processSampleRowEstonia.bind(this);
             } else if (csvType === 'letonia') {
                 csvPath = this.csvPathLetonia;
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowLetonia.bind(this);
             } else if (csvType === 'madrid') {
@@ -575,7 +644,7 @@ class SamplingDataService {
                 return await this.processSimpleCiraaCSV(this.csvPathItalyCiraa3, 'CIRAA3');
             } else if (csvType === 'asaja') {
                 csvPath = path.join(__dirname, '../../Formatos de coordenadas/Asaja.csv');
-                separator = ',';
+                separator = ';';
                 headers = undefined;
                 rowProcessor = this.processSampleRowAsaja.bind(this);
             } else {
@@ -599,12 +668,10 @@ class SamplingDataService {
                         resolve(samples);
                     })
                     .on('error', (error) => {
-                        console.error('Error leyendo archivo CSV:', error);
                         reject(error);
                     });
             });
         } catch (error) {
-            console.error('Error procesando datos de muestreo:', error);
             throw error;
         }
     }
@@ -619,23 +686,25 @@ class SamplingDataService {
             for (const key in row) {
                 sample[key.trim()] = typeof row[key] === 'string' ? row[key].trim() : row[key];
             }
-
-            // Mejorar lógica de coordenadas
-            const coordRaw = sample['Coord (Lat & Long)'] || sample['Coord'] || '';
-            let coordX = '';
-            let coordY = '';
-            if (coordRaw.includes(';')) {
-                // Ejemplo: "48° 17' 59.40" N;  9° 4' 55.37" O"
-                const [lat, lon] = coordRaw.split(';');
-                coordY = lat.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
-                coordX = lon.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
-            } else if (coordRaw) {
-                // Si solo hay una coordenada, poner en Y
-                coordY = coordRaw.replace(/[^0-9.,-]/g, '').replace(',', '.').trim();
+            // 1. Usar columnas lat/lon si existen y son válidas
+            let lat = null, lon = null;
+            const latRaw = sample['lat'] || sample['Lat'] || sample['LAT'] || '';
+            const lonRaw = sample['lon'] || sample['Lon'] || sample['LON'] || '';
+            if (latRaw && lonRaw) {
+                lat = parseFloat(String(latRaw).replace(',', '.'));
+                lon = parseFloat(String(lonRaw).replace(',', '.'));
             }
-            sample['coordX'] = coordX;
-            sample['coordY'] = coordY;
-
+            // 2. Si no existen, intentar usar coordY como latitud y coordX como longitud (asumiendo grados decimales)
+            if ((lat === null || isNaN(lat)) || (lon === null || isNaN(lon))) {
+                const coordXRaw = sample['coordX'] || sample['coordx'] || '';
+                const coordYRaw = sample['coordY'] || sample['coordy'] || '';
+                if (coordXRaw && coordYRaw) {
+                    lat = parseFloat(String(coordYRaw).replace(',', '.'));
+                    lon = parseFloat(String(coordXRaw).replace(',', '.'));
+                }
+            }
+            sample['lat'] = lat;
+            sample['lon'] = lon;
             return sample;
         } catch (error) {
             console.error('Error procesando fila del CSV de Alemania:', error, row);
@@ -653,7 +722,6 @@ class SamplingDataService {
             const latitude = parseFloat(row['Y_WG84']?.replace(',', '.'));
             
             if (isNaN(longitude) || isNaN(latitude)) {
-                console.warn(`Coordenadas inválidas para la muestra ${row.code}`);
                 return null;
             }
 
@@ -778,7 +846,6 @@ class SamplingDataService {
                 sample && sample.properties.code === code
             );
         } catch (error) {
-            console.error('Error buscando muestra por código:', error);
             throw error;
         }
     }
